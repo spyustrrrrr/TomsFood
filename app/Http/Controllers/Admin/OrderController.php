@@ -4,17 +4,29 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\Restaurant;
 use Illuminate\Http\Request;
 
 class OrderController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $orders = Order::with(['customer', 'restaurant'])
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $query = Order::with(['customer', 'restaurant']);
         
-        return view('admin.orders.index', compact('orders'));
+        // Filter by restaurant if selected
+        if ($request->filled('restaurant_id')) {
+            $query->where('restaurant_id', $request->restaurant_id);
+        }
+        
+        // Filter by status if selected
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+        
+        $orders = $query->orderBy('created_at', 'desc')->get();
+        $restaurants = Restaurant::all(); // For filter dropdown
+        
+        return view('admin.orders.index', compact('orders', 'restaurants'));
     }
 
     public function show($id)

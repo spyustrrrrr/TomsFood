@@ -9,10 +9,19 @@ use Illuminate\Http\Request;
 
 class MenuController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $menus = Menu::with('restaurant')->orderBy('created_at', 'desc')->get();
-        return view('admin.menus.index', compact('menus'));
+        $query = Menu::with('restaurant');
+        
+        // Filter by restaurant if selected
+        if ($request->filled('restaurant_id')) {
+            $query->where('restaurant_id', $request->restaurant_id);
+        }
+        
+        $menus = $query->orderBy('created_at', 'desc')->get();
+        $restaurants = Restaurant::all(); // For filter dropdown
+        
+        return view('admin.menus.index', compact('menus', 'restaurants'));
     }
 
     public function create()

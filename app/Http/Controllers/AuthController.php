@@ -35,6 +35,11 @@ class AuthController extends Controller
             Auth::login($user);
             $request->session()->regenerate();
 
+            // Redirect based on user role
+            if ($user->isAdmin()) {
+                return redirect()->route('admin.dashboard')->with('success', 'Welcome to Admin Panel!');
+            }
+
             return redirect()->intended('/')->with('success', 'Login successful!');
         }
 

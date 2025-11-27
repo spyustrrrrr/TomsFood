@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Restaurant;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class RestaurantController extends Controller
 {
@@ -24,9 +25,15 @@ class RestaurantController extends Controller
         $validated = $request->validate([
             'name' => 'required|max:100',
             'description' => 'nullable',
-            'image' => 'nullable|max:255',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'rating' => 'nullable|numeric|min:0|max:5',
         ]);
+
+        // Handle image upload
+        if ($request->hasFile('image')) {
+            $imagePath = $request->file('image')->store('restaurants', 'public');
+            $validated['image'] = $imagePath;
+        }
 
         Restaurant::create($validated);
 
@@ -47,9 +54,20 @@ class RestaurantController extends Controller
         $validated = $request->validate([
             'name' => 'required|max:100',
             'description' => 'nullable',
-            'image' => 'nullable|max:255',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'rating' => 'nullable|numeric|min:0|max:5',
         ]);
+
+        // Handle image upload
+        if ($request->hasFile('image')) {
+            // Delete old image if exists
+            if ($restaurant->image) {
+                Storage::disk('public')->delete($restaurant->image);
+            }
+            
+            $imagePath = $request->file('image')->store('restaurants', 'public');
+            $validated['image'] = $imagePath;
+        }
 
         $restaurant->update($validated);
 
