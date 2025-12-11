@@ -15,7 +15,7 @@ use App\Http\Controllers\Admin\ReservationController as AdminReservationControll
 
 /*
 |--------------------------------------------------------------------------
-| File: routes/web.php (UPDATED)
+| File: routes/web.php (FIXED & CLEANED)
 |--------------------------------------------------------------------------
 */
 
@@ -36,6 +36,9 @@ Route::middleware('guest')->group(function () {
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
+// Payment Notification (Webhook dari Midtrans - MUST BE OUTSIDE AUTH)
+Route::post('/payment/notification', [\App\Http\Controllers\PaymentController::class, 'notification'])->name('payment.notification');
+
 // Restaurant Routes (Public)
 Route::get('/restaurants', [RestaurantController::class, 'index'])->name('restaurants.index');
 Route::get('/restaurants/{id}', [RestaurantController::class, 'show'])->name('restaurants.show');
@@ -50,12 +53,13 @@ Route::get('/menus/{id}', [MenuController::class, 'show'])->name('menus.show');
 
 Route::middleware('auth')->group(function () {
     
-    // Reservation Routes
+    // Reservation Routes (MAIN FEATURE)
     Route::prefix('reservations')->name('reservations.')->group(function () {
         Route::get('/', [ReservationController::class, 'index'])->name('index');
         Route::get('/create', [ReservationController::class, 'create'])->name('create');
         Route::post('/', [ReservationController::class, 'store'])->name('store');
         Route::get('/{id}', [ReservationController::class, 'show'])->name('show');
+        Route::get('/{id}/confirmation', [ReservationController::class, 'confirmation'])->name('confirmation'); // NEW
         Route::post('/{id}/cancel', [ReservationController::class, 'cancel'])->name('cancel');
         
         // AJAX: Check availability
@@ -63,13 +67,18 @@ Route::middleware('auth')->group(function () {
             ->name('checkAvailability');
     });
 
-    // Order Routes (Legacy - kept for backward compatibility)
+    // Payment Routes (NEW - Midtrans)
+    Route::prefix('payment')->name('payment.')->group(function () {
+        Route::get('/{reservationId}', [\App\Http\Controllers\PaymentController::class, 'show'])->name('show');
+        Route::post('/{reservationId}/create-token', [\App\Http\Controllers\PaymentController::class, 'createToken'])->name('create-token');
+        Route::get('/{reservationId}/finish', [\App\Http\Controllers\PaymentController::class, 'finish'])->name('finish');
+        Route::get('/{reservationId}/check-status', [\App\Http\Controllers\PaymentController::class, 'checkStatus'])->name('check-status');
+    });
+
+    // Order Routes (Legacy - jika masih diperlukan untuk fitur lain)
     Route::prefix('orders')->name('orders.')->group(function () {
         Route::get('/', [OrderController::class, 'index'])->name('index');
         Route::get('/{id}', [OrderController::class, 'show'])->name('show');
-        Route::post('/', [OrderController::class, 'store'])->name('store');
-        Route::put('/{id}/status', [OrderController::class, 'updateStatus'])->name('updateStatus');
-        Route::post('/{id}/cancel', [OrderController::class, 'cancel'])->name('cancel');
     });
 });
 
@@ -102,14 +111,14 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
         Route::delete('/{id}', [AdminMenuController::class, 'destroy'])->name('destroy');
     });
     
-    // Orders Management (Legacy)
+    // Orders Management
     Route::prefix('orders')->name('orders.')->group(function () {
         Route::get('/', [AdminOrderController::class, 'index'])->name('index');
         Route::get('/{id}', [AdminOrderController::class, 'show'])->name('show');
         Route::put('/{id}/status', [AdminOrderController::class, 'updateStatus'])->name('updateStatus');
     });
     
-    // Reservations Management (NEW)
+    // Reservations Management
     Route::prefix('reservations')->name('reservations.')->group(function () {
         Route::get('/', [AdminReservationController::class, 'index'])->name('index');
         Route::get('/{id}', [AdminReservationController::class, 'show'])->name('show');
@@ -118,11 +127,5 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
         Route::post('/{id}/assign-table', [AdminReservationController::class, 'assignTable'])->name('assignTable');
         Route::post('/{id}/mark-arrived', [AdminReservationController::class, 'markArrived'])->name('markArrived');
         Route::post('/{id}/complete', [AdminReservationController::class, 'complete'])->name('complete');
-        
-        // Today's reservations widget
-        Route::get('/today/widget', [AdminReservationController::class, 'todayReservations'])->name('today');
-        
-        // Statistics
-        Route::get('/statistics', [AdminReservationController::class, 'statistics'])->name('statistics');
     });
 });

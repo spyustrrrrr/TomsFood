@@ -15,10 +15,11 @@
             {{-- Image --}}
             <div class="md:w-2/5">
                 @if($restaurant->image)
-                    <img src="{{ $restaurant->image }}" 
-                         alt="{{ $restaurant->name }}"
-                         class="w-full h-80 object-cover">
-                @else2
+                    <div class="mb-3">
+                        <img src="{{ asset('storage/' . $restaurant->image) }}" alt="{{ $restaurant->name }}" class="w-full overflow-hidden rounded-lg leading-none">
+                        
+                    </div>
+                @else
                     <div class="w-full h-80 bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
                         <span class="text-9xl">🍽️</span>
                     </div>

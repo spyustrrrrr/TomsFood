@@ -171,8 +171,8 @@
                 {{-- Contact --}}
                 <div>
                     <h4 class="text-lg font-semibold mb-4">Contact</h4>
-                    <p class="text-gray-400 mb-2">📧 support@tomanfood.com</p>
-                    <p class="text-gray-400">📞 +62 812-3456-7890</p>
+                    <p class="text-gray-400 mb-2">📧 foodtoman@gmail.com</p>
+                    <p class="text-gray-400">📞 +62 877-0031-3085</p>
                 </div>
             </div>
 

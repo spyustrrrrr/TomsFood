@@ -14,10 +14,11 @@
             {{-- Restaurant Info Sidebar --}}
             <div class="lg:col-span-1">
                 <div class="bg-white rounded-lg shadow-md sticky top-4">
-                    @if($restaurant->image)
-                        <img src="{{ $restaurant->image }}" 
-                             alt="{{ $restaurant->name }}"
-                             class="w-full h-48 object-cover rounded-t-lg">
+                     @if($restaurant->image)
+                    <div class="mb-3">
+                        <img src="{{ asset('storage/' . $restaurant->image) }}" alt="{{ $restaurant->name }}" class="w-full h-48 object-cover rounded">
+                        
+                    </div>
                     @else
                         <div class="w-full h-48 bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center rounded-t-lg">
                             <span class="text-6xl">🍽️</span>

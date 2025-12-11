@@ -10,12 +10,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
+
 
 class ReservationController extends Controller
 {
     /**
-     * File: app/Http/Controllers/ReservationController.php
-     * 
      * Display a listing of user's reservations
      */
     public function index()
@@ -42,22 +42,15 @@ class ReservationController extends Controller
 
         $restaurant = Restaurant::with('menus')->findOrFail($restaurantId);
         
-        // Cek apakah restoran buka
-        if ($restaurant->isClosed()) {
-            return redirect()->route('restaurants.show', $restaurant->id)
-                ->with('error', 'Restoran sedang tutup. Jam buka: ' . 
-                    $restaurant->formatted_opening_hours . ' - ' . 
-                    $restaurant->formatted_closing_hours);
-        }
-
         return view('reservations.create', compact('restaurant'));
     }
 
     /**
-     * Store a newly created reservation
+     * Store a newly created reservation (FIXED VERSION)
      */
     public function store(Request $request)
     {
+        // Validasi input
         $validated = $request->validate([
             'restaurant_id' => 'required|exists:restaurants,id',
             'reservation_date' => 'required|date|after:now',
@@ -66,6 +59,9 @@ class ReservationController extends Controller
             'menus' => 'required|array|min:1',
             'menus.*.menu_id' => 'required|exists:menus,id',
             'menus.*.quantity' => 'required|integer|min:1|max:20',
+        ], [
+            'menus.required' => 'Anda harus memilih minimal 1 menu untuk pre-order.',
+            'menus.min' => 'Anda harus memilih minimal 1 menu untuk pre-order.',
         ]);
 
         $restaurant = Restaurant::findOrFail($validated['restaurant_id']);
@@ -90,7 +86,9 @@ class ReservationController extends Controller
         if ($reservationTime < $restaurant->opening_hours || 
             $reservationTime > $restaurant->closing_hours) {
             return back()->withInput()->with('error', 
-                'Jam reservasi harus dalam jam operasional restoran.');
+                'Jam reservasi harus dalam jam operasional restoran (' . 
+                $restaurant->formatted_opening_hours . ' - ' . 
+                $restaurant->formatted_closing_hours . ').');
         }
 
         DB::beginTransaction();
@@ -146,11 +144,15 @@ class ReservationController extends Controller
 
             DB::commit();
 
-            return redirect()->route('reservations.show', $reservation->id)
-                ->with('success', 'Reservasi berhasil dibuat! Menunggu konfirmasi restoran.');
+            // Redirect ke halaman payment
+            return redirect()->route('payment.show', $reservation->id)
+                ->with('success', 'Reservasi berhasil dibuat! Silakan selesaikan pembayaran.');
 
         } catch (\Exception $e) {
             DB::rollBack();
+            
+            \Log::error('Reservation Error: ' . $e->getMessage());
+            
             return back()->withInput()
                 ->with('error', 'Gagal membuat reservasi: ' . $e->getMessage());
         }
@@ -173,6 +175,21 @@ class ReservationController extends Controller
     }
 
     /**
+     * Show confirmation page (NEW)
+     */
+    public function confirmation($id)
+    {
+        $reservation = Reservation::with([
+            'restaurant', 
+            'order.orderItems'
+        ])
+        ->where('customer_id', Auth::id())
+        ->findOrFail($id);
+        
+        return view('reservations.confirmation', compact('reservation'));
+    }
+
+    /**
      * Cancel reservation
      */
     public function cancel($id)
@@ -187,7 +204,7 @@ class ReservationController extends Controller
         }
 
         // Cek minimal waktu pembatalan (misalnya 2 jam sebelum reservasi)
-        $minCancelTime = $reservation->reservation_date->subHours(2);
+        $minCancelTime = $reservation->reservation_date->copy()->subHours(2);
         if (now()->gt($minCancelTime)) {
             return back()->with('error', 
                 'Reservasi tidak dapat dibatalkan kurang dari 2 jam sebelum waktu kedatangan.');
