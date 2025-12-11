@@ -28,6 +28,12 @@ class User extends Authenticatable
         return $this->hasMany(Order::class, 'customer_id');
     }
 
+    // Relationship: User has many Cart items
+    public function carts()
+    {
+        return $this->hasMany(Cart::class, 'user_id');
+    }
+
     // Helper method: Get full name
     public function getFullNameAttribute()
     {
@@ -44,5 +50,17 @@ class User extends Authenticatable
     public function isCustomer()
     {
         return $this->role === 'customer';
+    }
+
+    // Helper method: Get cart count
+    public function getCartCountAttribute()
+    {
+        return $this->carts()->sum('quantity');
+    }
+
+    // Helper method: Get cart total
+    public function getCartTotalAttribute()
+    {
+        return $this->carts()->get()->sum('subtotal');
     }
 }

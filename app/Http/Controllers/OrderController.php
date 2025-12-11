@@ -82,11 +82,28 @@ class OrderController extends Controller
 
             DB::commit();
 
+            // Handle JSON request (AJAX)
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Order created successfully!',
+                    'order_id' => $order->id
+                ]);
+            }
+
             return redirect()->route('orders.show', $order->id)
                 ->with('success', 'Order created successfully!');
 
         } catch (\Exception $e) {
             DB::rollBack();
+            
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to create order: ' . $e->getMessage()
+                ], 500);
+            }
+            
             return back()->with('error', 'Failed to create order: ' . $e->getMessage());
         }
     }
