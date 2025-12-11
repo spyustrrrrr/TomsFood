@@ -12,8 +12,12 @@ class HomeController extends Controller
      */
     public function index()
     {
-        $restaurants = Restaurant::orderBy('rating', 'desc')->get();
+        $restaurants = Restaurant::orderBy('rating', 'desc')
+        ->take(4)
+        ->get();
         
         return view('home', compact('restaurants'));
     }
+
+    
 }
