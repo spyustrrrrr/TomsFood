@@ -25,6 +25,12 @@ class RestaurantController extends Controller
         $validated = $request->validate([
             'name' => 'required|max:100',
             'description' => 'nullable',
+            'address' => 'nullable|string',
+            'phone' => 'nullable|string|max:20',
+            'table_capacity' => 'nullable|integer|min:1',
+            'opening_hours' => 'nullable',
+            'closing_hours' => 'nullable',
+            'booking_advance_hours' => 'nullable|integer|min:1',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'rating' => 'nullable|numeric|min:0|max:5',
         ]);
@@ -34,6 +40,12 @@ class RestaurantController extends Controller
             $imagePath = $request->file('image')->store('restaurants', 'public');
             $validated['image'] = $imagePath;
         }
+
+        // Set default values if not provided
+        $validated['table_capacity'] = $validated['table_capacity'] ?? 20;
+        $validated['opening_hours'] = $validated['opening_hours'] ?? '08:00:00';
+        $validated['closing_hours'] = $validated['closing_hours'] ?? '22:00:00';
+        $validated['booking_advance_hours'] = $validated['booking_advance_hours'] ?? 2;
 
         Restaurant::create($validated);
 
@@ -54,6 +66,12 @@ class RestaurantController extends Controller
         $validated = $request->validate([
             'name' => 'required|max:100',
             'description' => 'nullable',
+            'address' => 'nullable|string',
+            'phone' => 'nullable|string|max:20',
+            'table_capacity' => 'nullable|integer|min:1',
+            'opening_hours' => 'nullable',
+            'closing_hours' => 'nullable',
+            'booking_advance_hours' => 'nullable|integer|min:1',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'rating' => 'nullable|numeric|min:0|max:5',
         ]);
